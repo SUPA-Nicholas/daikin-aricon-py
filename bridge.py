@@ -20,9 +20,9 @@ def parse_sensor_info(x):
     return x
 
 
-ctrl_integers = ['alert', 'mode', 'b_mode']
-ctrl_temps = ['shum', 'stemp', 'b_shum']
-ctrl_booleans = ['pow']
+ctrl_integers = 'mode'
+ctrl_temps = 'stemp'
+ctrl_booleans = 'pow'
 
 def parse_control_info(x):
     parse_data(x, integers=ctrl_integers, temps=ctrl_temps, booleans=ctrl_booleans)
@@ -37,25 +37,22 @@ def parse_data(x, integers=[],
                   booleans=[],
                   temps=[]):
 
-    for field in integers:
-        try:
-            x[field] = int(x[field])
-        except ValueError as e:
-            log.exception("failed to parse field '{}': {}".format(field, e.message))
+    try:
+        x[integers] = int(x[integers])
+    except ValueError as e:
+        log.exception("failed to parse field '{}': {}".format(integers, e.message))
 
-    for field in booleans:
-        try:
-            x[field] = bool(int(x[field]))
-        except ValueError as e:
-            log.exception("Failed to parse field '{}': {}".format(field, e.message))
+    try:
+        x[booleans] = bool(int(x[booleans]))
+    except ValueError as e:
+        log.exception("Failed to parse field '{}': {}".format(booleans, e.message))
 
-    for field in temps:
-        try:
-            x[field] = parse_temperature(x[field])
-        except ValueError:
-            log.exception(("Failed to parse field {{'{}':'{}'}}."
-                           "A temperature was expected").format(field, x[field]))
-            pass
+    try:
+        x[temps] = parse_temperature(x[temps])
+    except ValueError:
+        log.exception(("Failed to parse field {{'{}':'{}'}}."
+                        "A temperature was expected").format(temps, x[temps]))
+        pass
 
 
 def format_data(x, strict=True,
@@ -63,26 +60,23 @@ def format_data(x, strict=True,
                 booleans=[],
                 temps=[]):
 
-    for field in integers:
-        try:
-            x[field] = str(int(x[field]))
-        except KeyError:
-            if not strict:
-                pass
+    try:
+        x[integers] = str(int(x[integers]))
+    except KeyError:
+        if not strict:
+            pass
 
-    for field in booleans:
-        try:
-            x[field] = str(int(bool(x[field])))
-        except KeyError:
-            if not strict:
-                pass
+    try:
+        x[booleans] = str(int(bool(x[booleans])))
+    except KeyError:
+        if not strict:
+            pass
 
-    for field in temps:
-        try:
-            x[field] = str(float(x[field]))
-        except KeyError:
-            if not strict:
-                pass
+    try:
+        x[temps] = str(float(x[temps]))
+    except KeyError:
+        if not strict:
+            pass
 
 
 def parse_temperature(temp):

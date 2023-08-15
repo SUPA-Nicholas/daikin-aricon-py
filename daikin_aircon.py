@@ -20,12 +20,6 @@ log = logging.getLogger("dainkin_aircon")
 
 class Aircon():
 
-    MODE_AUTO = 0
-    MODE_DRY = 2
-    MODE_COOL = 3
-    MODE_HEAT = 4
-    MODE_FAN = 6
-
     def __init__(self, host):
         self.host = host
         self._http_conn = None
@@ -62,12 +56,22 @@ class Aircon():
     target_temp = property(get_target_temp, set_target_temp)
 
     def get_mode(self):
-        return self.get_control_info()['mode']
+        MODE = ['FAN','HEAT','Cool','','','','','DRY']
+        return MODE[int(self.get_control_info()['mode'])]
 
     def set_mode(self, v):
         self.set_control_info({'mode': v})
 
     mode = property(get_mode, set_mode)
+
+    def get_frate(self):
+        RATE = ['AUTO','LOW','','MEDIUM','','HIGH']
+        return RATE[int(self.get_control_info()['f_rate'])]
+    
+    def set_frate(self, v):
+        self.set_control_info({'f_rate': v})
+
+    frate = property(get_frate, set_frate)
 
     def get_indoor_temp(self):
         return self.get_sensor_info()['htemp']
@@ -80,16 +84,16 @@ class Aircon():
     outdoor_temp = property(get_outdoor_temp)
 
     def reboot(self):
-        return self.send_request('GET', '/common/reboot')
+        return self.send_request('GET', '/skyfi/common/reboot')
 
     def get_raw_basic_info(self):
-        return self.send_request('GET', '/common/basic_info')
+        return self.send_request('GET', '/skyfi/common/basic_info')
 
     def get_basic_info(self):
         return bridge.parse_basic_info(self.get_raw_basic_info())
 
     def get_raw_sensor_info(self):
-        return self.send_request('get', '/aircon/get_sensor_info')
+        return self.send_request('get', '/skyfi/aircon/get_sensor_info')
 
     def get_sensor_info(self):
         return bridge.parse_sensor_info(self.get_raw_sensor_info())
@@ -97,16 +101,16 @@ class Aircon():
     def set_raw_control_info(self, params, update=True):
         if update:
             cinfo = self.get_raw_control_info()
-            minimal_cinfo = {k:cinfo[k] for k in cinfo if k in ['pow','mode','stemp', 'shum','f_rate','f_dir']}
+            minimal_cinfo = {k:cinfo[k] for k in cinfo if k in ['pow','mode','stemp','f_rate','f_dir']}
             minimal_cinfo.update(params)
             params = minimal_cinfo
-        self.send_request('GET', '/aircon/set_control_info', fields=params)
+        self.send_request('GET', '/skyfi/aircon/set_control_info', fields=params)
 
     def set_control_info(self, params, update=True):
         return self.set_raw_control_info(bridge.format_control_info(params), update)
 
     def get_raw_control_info(self):
-        return self.send_request('GET', '/aircon/get_control_info')
+        return self.send_request('GET', '/skyfi/aircon/get_control_info')
 
     def get_control_info(self):
         return bridge.parse_control_info(self.get_raw_control_info())
@@ -146,7 +150,7 @@ def process_response(response):
        standard prefix @RESPONSE_PREFIX a RespException will be raised.
     '''
     rsp = response.split(b',')
-    if (len(rsp) is 0) or (not rsp[0].startswith(b'ret=')):
+    if (len(rsp) == 0) or (not rsp[0].startswith(b'ret=')):
         raise RespException("Unrecognized data format for the response")
 
     ret_msg = rsp[0][4:]
